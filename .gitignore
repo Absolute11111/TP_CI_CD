@@ -17,3 +17,10 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Keystore de signature — ne jamais committer
+keystore.jks
+keystore.b64
+
+# Claude Code
+.claude

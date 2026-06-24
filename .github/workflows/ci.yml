@@ -1,0 +1,174 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+
+  # ─── Tests + APK Android ────────────────────────────────────────────────────
+  test:
+    name: Tests & APK Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Rendre gradlew exécutable
+        run: chmod +x gradlew
+
+      - name: Lancer les tests JVM
+        env:
+          PHOTOGRAPHER_API_KEY: ${{ secrets.PHOTOGRAPHER_API_KEY }}
+        run: ./gradlew jvmTest --no-daemon
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/'
+
+      - name: Build Android Debug APK
+        env:
+          PHOTOGRAPHER_API_KEY: ${{ secrets.PHOTOGRAPHER_API_KEY }}
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: '**/build/outputs/apk/debug/*.apk'
+
+  # ─── Build iOS (macOS requis) ─────────────────────────────────────────────
+  # ios:
+  #   name: Build iOS
+  #   runs-on: macos-latest
+  #
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: JDK 17
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         java-version: '17'
+  #         distribution: 'temurin'
+  #
+  #     - name: Cache Gradle
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/.gradle/caches
+  #           ~/.gradle/wrapper
+  #         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+  #         restore-keys: ${{ runner.os }}-gradle-
+  #
+  #     - name: Rendre gradlew exécutable
+  #       run: chmod +x gradlew
+  #
+  #     - name: Build KMP Framework iOS Simulator
+  #       run: ./gradlew linkDebugFrameworkIosSimulatorArm64 --no-daemon
+  #
+  #     - name: Build iOS app (simulateur)
+  #       run: |
+  #         xcodebuild \
+  #           -project iosApp/iosApp.xcodeproj \
+  #           -scheme A03_kmp_mprolead_g1 \
+  #           -sdk iphonesimulator \
+  #           -configuration Debug \
+  #           -derivedDataPath build/ios \
+  #           CODE_SIGNING_ALLOWED=NO \
+  #           build
+  #
+  #     - name: Upload iOS app
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ios-app
+  #         path: build/ios/Build/Products/Debug-iphonesimulator/A03_kmp_mprolead_g1.app
+
+  # ─── Desktop Linux (.deb) ─────────────────────────────────────────────────
+  desktop-linux:
+    name: Desktop Linux (.deb)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Rendre gradlew exécutable
+        run: chmod +x gradlew
+
+      - name: Build Desktop Linux .deb
+        run: ./gradlew packageDeb --no-daemon
+
+      - name: Upload Desktop .deb (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux-deb
+          path: '**/build/compose/binaries/main/deb/*.deb'
+
+  # ─── Desktop Windows (.msi) ───────────────────────────────────────────────
+  # desktop-windows:
+  #   name: Desktop Windows (.msi)
+  #   runs-on: windows-latest
+  #
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: JDK 17
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         java-version: '17'
+  #         distribution: 'temurin'
+  #
+  #     - name: Cache Gradle
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/.gradle/caches
+  #           ~/.gradle/wrapper
+  #         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+  #         restore-keys: ${{ runner.os }}-gradle-
+  #
+  #     - name: Build Desktop Windows .msi
+  #       run: ./gradlew packageMsi --no-daemon
+  #
+  #     - name: Upload Desktop .msi (Windows)
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: desktop-windows-msi
+  #         path: '**/build/compose/binaries/main/msi/*.msi'

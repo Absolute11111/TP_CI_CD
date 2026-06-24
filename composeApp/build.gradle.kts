@@ -29,8 +29,10 @@ buildConfig {
     // Le package où la classe sera générée
     packageName("com.amonteiro.a03_kmp_mprolead_g1")
 
-    // Récupération sécurisée de la clé
-    val photographerApiKey = localProperties.getProperty("photographer.api.key") ?: ""
+    // Récupération sécurisée de la clé : env var CI en priorité, sinon local.properties
+    val photographerApiKey = System.getenv("PHOTOGRAPHER_API_KEY")
+        ?: localProperties.getProperty("photographer.api.key")
+        ?: ""
 
     println("photographerApiKey chargée : $photographerApiKey")
 
@@ -104,6 +106,11 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+        }
+        jvmTest.dependencies {
+            // Moteur HTTP pour les tests JVM (nécessaire pour PhotographerAPITest)
+            implementation("io.ktor:ktor-client-okhttp:3.2.2")
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -135,9 +142,18 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("keystore.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+        }
+    }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
