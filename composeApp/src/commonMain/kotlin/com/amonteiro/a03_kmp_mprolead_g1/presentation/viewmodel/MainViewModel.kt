@@ -9,7 +9,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
-class MainViewModel : ViewModel() {
+class MainViewModel(val photographerAPI: PhotographerAPI) : ViewModel() {
     val dataList = MutableStateFlow(emptyList<PhotographerDTO>())
     val runInProgress = MutableStateFlow(false)
     val errorMessage = MutableStateFlow("")
@@ -24,7 +24,7 @@ class MainViewModel : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                dataList.value = PhotographerAPI.loadPhotographers()
+                dataList.value = photographerAPI.loadPhotographers()
             }
             catch(e:Exception){
                 e.printStackTrace()

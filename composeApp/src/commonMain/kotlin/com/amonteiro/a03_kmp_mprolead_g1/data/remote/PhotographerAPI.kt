@@ -1,17 +1,14 @@
 package com.amonteiro.a03_kmp_mprolead_g1.data.remote
 
 import com.amonteiro.a03_kmp_mprolead_g1.BuildConfig
+import com.amonteiro.a03_kmp_mprolead_g1.di.initKoin
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
 import io.ktor.http.isSuccess
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import org.koin.mp.KoinPlatform
 
 @Serializable //KotlinX impose cette annotation
 data class PhotographerDTO(
@@ -24,30 +21,25 @@ data class PhotographerDTO(
 
 suspend fun main() {
 
-    println(PhotographerAPI.loadPhotographers().joinToString(separator = "\n\n"))
+    initKoin()
+
+    val photographerAPI = KoinPlatform.getKoin().get<PhotographerAPI>()
+
+    println(photographerAPI.loadPhotographers().joinToString(separator = "\n\n"))
 
 
     //Pour que le programme s'arrête, inutile sur Android
-    PhotographerAPI.close()
+    photographerAPI.close()
 }
 
-object PhotographerAPI {
-    private const val API_URL =
-        "https://www.amonteiro.fr/api/photographers?apikey=${BuildConfig.PHOTOGRAPHER_API_KEY}"
+class PhotographerAPI(val client : HttpClient ) {
 
-    //Déclaration du client
-    private val client = HttpClient {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true }, contentType = ContentType.Any)
-        }
-        install(HttpTimeout) {
-            requestTimeoutMillis = 5000
-        }
-        //Proxy
-        //engine {
-        //    proxy = ProxyBuilder.http("monproxy:1234")
-        //}
+    companion object {
+        private const val API_URL =
+            "https://www.amonteiro.fr/api/photographers?apikey=${BuildConfig.PHOTOGRAPHER_API_KEY}"
     }
+    //Déclaration du client
+
 
     //GET
     suspend fun loadPhotographers(): List<PhotographerDTO> {

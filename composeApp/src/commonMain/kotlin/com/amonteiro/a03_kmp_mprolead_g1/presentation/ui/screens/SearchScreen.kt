@@ -36,30 +36,40 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.amonteiro.a03_kmp_mprolead_g1.data.remote.PhotographerDTO
+import com.amonteiro.a03_kmp_mprolead_g1.di.apiModule
+import com.amonteiro.a03_kmp_mprolead_g1.di.viewModelModule
 import com.amonteiro.a03_kmp_mprolead_g1.presentation.PictureGallery
 import com.amonteiro.a03_kmp_mprolead_g1.presentation.viewmodel.MainViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.KoinApplicationPreview
+import org.koin.compose.viewmodel.koinViewModel
 
 @Preview(showBackground = true, showSystemUi = true, uiMode = 2)
 @Composable
 fun SearchScreenPreview() {
     //Il faut remplacer NomVotreAppliTheme par le thème de votre application
     //Utilisé par exemple dans MainActivity.kt sous setContent {...}
-    MaterialTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            SearchScreen(modifier = Modifier.padding(innerPadding))
+    KoinApplicationPreview(application = {
+        modules(viewModelModule, apiModule)
+    }) {
+        MaterialTheme {
+            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+
+                val mainViewModel = koinViewModel<MainViewModel>()
+
+                SearchScreen(modifier = Modifier.padding(innerPadding), mainViewModel = mainViewModel)
+            }
         }
     }
 }
 
 @Composable
 fun SearchScreen(modifier: Modifier = Modifier,
-                 mainViewModel: MainViewModel = viewModel{ MainViewModel() },
+                 mainViewModel: MainViewModel,
                  navHostController : NavHostController? = null
                  ) {
 
